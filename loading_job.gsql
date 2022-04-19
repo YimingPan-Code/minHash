@@ -1,0 +1,26 @@
+CREATE LOADING JOB load_customer_data FOR GRAPH entity_resolution {
+      DEFINE FILENAME f;
+      LOAD f TO TEMP_TABLE t1(cust_key, cust_name, codename1, codename2, codename3) VALUES($0, $2, FLATTEN (minHash(gsql_regex_replace($2,"[$&+,:;=?@#|’<>.^*()%!-]","\0"),"3","5","3"), ",", "|", 3)) USING SEPARATOR=",", HEADER="true", EOL="\n";
+      LOAD f TO TEMP_TABLE t2(cust_key, address, codeadd1, codeadd2, codeadd3) VALUES($0, $6, FLATTEN (minHash(gsql_regex_replace($6,"[$&+,:;=?@#|’<>.^*()%!-]","\0"),"5","10","3"), ",", "|", 3)) USING SEPARATOR=",", HEADER="true", EOL="\n";
+      LOAD f TO VERTEX Customer VALUES($0, $2, $0, $6) USING SEPARATOR=",", HEADER="true", EOL="\n";
+      LOAD f TO VERTEX Ssn VALUES($5) USING SEPARATOR=",", HEADER="true", EOL="\n";
+      LOAD f TO VERTEX Hphone VALUES($3) USING SEPARATOR=",", HEADER="true", EOL="\n";
+      LOAD f TO VERTEX Bphone VALUES($4) USING SEPARATOR=",", HEADER="true", EOL="\n";
+      LOAD f TO VERTEX Alt_id VALUES($1) USING SEPARATOR=",", HEADER="true", EOL="\n";
+      LOAD TEMP_TABLE t1 TO VERTEX customer_name VALUES($"codename1");
+      LOAD TEMP_TABLE t1 TO VERTEX customer_name VALUES($"codename2");
+      LOAD TEMP_TABLE t1 TO VERTEX customer_name VALUES($"codename3");
+      LOAD TEMP_TABLE t2 TO VERTEX Address VALUES($"codeadd1");
+      LOAD TEMP_TABLE t2 TO VERTEX Address VALUES($"codeadd2");
+      LOAD TEMP_TABLE t2 TO VERTEX Address VALUES($"codeadd3");
+      LOAD f TO EDGE Has_Id VALUES($0, $1) USING SEPARATOR=",", HEADER="true", EOL="\n";
+      LOAD f TO EDGE Has_Bphone VALUES($0, $4) USING SEPARATOR=",", HEADER="true", EOL="\n";
+      LOAD f TO EDGE Has_Hphone VALUES($0, $3) USING SEPARATOR=",", HEADER="true", EOL="\n";
+      LOAD f TO EDGE Has_Ssn VALUES($0, $5) USING SEPARATOR=",", HEADER="true", EOL="\n";
+      LOAD TEMP_TABLE t1 TO EDGE Has_Nm_code VALUES($"cust_key", $"codename1", $"cust_name");
+      LOAD TEMP_TABLE t1 TO EDGE Has_Nm_code VALUES($"cust_key", $"codename2", $"cust_name");
+      LOAD TEMP_TABLE t1 TO EDGE Has_Nm_code VALUES($"cust_key", $"codename3", $"cust_name");
+      LOAD TEMP_TABLE t2 TO EDGE Has_Address_code VALUES($"cust_key", $"codeadd1", $"address");
+      LOAD TEMP_TABLE t2 TO EDGE Has_Address_code VALUES($"cust_key", $"codeadd2", $"address");
+      LOAD TEMP_TABLE t2 TO EDGE Has_Address_code VALUES($"cust_key", $"codeadd3", $"address");
+    }
